@@ -1,7 +1,7 @@
 # bookStackMCP
 
 [![CI and Docker release](https://github.com/jonesXYZ/bookStackMCP/actions/workflows/docker.yml/badge.svg?branch=main)](https://github.com/jonesXYZ/bookStackMCP/actions/workflows/docker.yml)
-![Private repository](https://img.shields.io/badge/repository-private-lightgrey)
+![Public repository](https://img.shields.io/badge/repository-public-brightgreen)
 ![Node.js 24](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)
 ![Docker image](https://img.shields.io/badge/image-GHCR-2496ED?logo=docker&logoColor=white)
 [![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/license-PolyForm--Noncommercial--1.0.0-blue.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0/)
@@ -63,14 +63,11 @@ Actions accept BookStack's API query parameters and request-body fields. For att
 
 ## Run with Docker
 
-The image is published to the private GitHub Container Registry (GHCR). You need Docker and permission to read the package.
+The image is published publicly to GitHub Container Registry (GHCR). You can pull it without signing in.
 
-### 1. Sign in and pull the image
-
-For interactive sign-in, use a GitHub personal access token with `read:packages` when prompted for your password:
+### 1. Pull the image
 
 ```powershell
-docker login ghcr.io -u jonesXYZ
 docker pull ghcr.io/jonesxyz/bookstackmcp:latest
 ```
 
@@ -116,7 +113,7 @@ docker build -t bookstackmcp:local .
 docker run --rm -i --env-file .env bookstackmcp:local
 ```
 
-The published package is private. Sign in with an account granted package read access; automation can use a GitHub token with `read:packages`.
+The image is public, so pulling it does not require a GitHub login.
 
 ## Run from source
 
@@ -196,10 +193,17 @@ GitHub Actions runs `npm ci` and `npm test` for pull requests and pushes to `mai
 | --- | --- |
 | Push to `main` | `main`, `latest`, commit SHA |
 | Push to `master` | `master`, `latest`, commit SHA |
-| Version tag such as `v1.2.3` | Version tag, commit SHA |
+| Version tag such as `v1.2.3` | Version tag, commit SHA; creates a GitHub Release with generated notes |
 | Pull request | Tests only; no published image |
 
-The workflow publishes `ghcr.io/jonesxyz/bookstackmcp` using the built-in `GITHUB_TOKEN` with `packages: write`; no manually configured publishing token is needed. The GHCR package is private; grant package read access to any user or deployment account that needs to pull the image.
+The workflow publishes `ghcr.io/jonesxyz/bookstackmcp` using the built-in `GITHUB_TOKEN` with `packages: write`; no manually configured publishing token is needed. Pushes to `main` publish Docker images only. To publish a GitHub Release, push a version tag:
+
+```powershell
+git tag v1.0.1
+git push origin v1.0.1
+```
+
+After tests and image publishing succeed, the workflow creates a GitHub Release for the tag with automatically generated release notes.
 
 ## Development
 
