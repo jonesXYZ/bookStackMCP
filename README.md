@@ -63,28 +63,60 @@ Actions accept BookStack's API query parameters and request-body fields. For att
 
 ## Run with Docker
 
-The image is published to GitHub Container Registry (GHCR):
+The image is published to the private GitHub Container Registry (GHCR). You need Docker and permission to read the package.
+
+### 1. Sign in and pull the image
+
+For interactive sign-in, use a GitHub personal access token with `read:packages` when prompted for your password:
 
 ```powershell
 docker login ghcr.io -u jonesXYZ
 docker pull ghcr.io/jonesxyz/bookstackmcp:latest
 ```
 
-The GHCR package is private. Sign in with an account granted package read access; automation can use a GitHub token with `read:packages`.
+### 2. Configure BookStack access
 
-Create a local `.env` from the example and add your BookStack URL and token:
+Create a local `.env` file from the example:
 
 ```powershell
 Copy-Item .env.example .env
+notepad .env
 ```
 
-Run the MCP server over stdio:
+Set the BookStack URL and API token credentials:
+
+```powershell
+BOOKSTACK_API_URL=https://bookstack.example.com
+BOOKSTACK_API_TOKEN=your_token_id
+BOOKSTACK_API_KEY=your_token_secret
+BOOKSTACK_ENABLE_WRITE=false
+BOOKSTACK_ENABLE_DELETE=false
+BOOKSTACK_ENABLE_ADMIN=false
+BOOKSTACK_ENABLE_IMPORTS=false
+```
+
+Keep all `BOOKSTACK_ENABLE_*` values set to `false` for read-only access. Enable a category only when needed; delete requires write access too, and imports require write access too. Use a dedicated BookStack API account with the minimum required permissions.
+
+### 3. Run the MCP server
+
+Run the container over stdio, which is the transport expected by MCP clients:
 
 ```powershell
 docker run --rm -i --env-file .env ghcr.io/jonesxyz/bookstackmcp:latest
 ```
 
-The `-i` flag keeps the MCP stdio connection open. The `.env` file stays on your machine and is not included in the image.
+The `-i` flag keeps the stdio connection open. Docker reads the environment file locally; it is not copied into the image. Do not commit `.env` or put API credentials in the Dockerfile. If BookStack is running on the same machine as Docker, use an address reachable from the container (for example, `http://host.docker.internal:8080` on Docker Desktop) rather than `localhost`.
+
+### Build the image locally
+
+To build and run the image from a local checkout instead of pulling it from GHCR:
+
+```powershell
+docker build -t bookstackmcp:local .
+docker run --rm -i --env-file .env bookstackmcp:local
+```
+
+The published package is private. Sign in with an account granted package read access; automation can use a GitHub token with `read:packages`.
 
 ## Run from source
 
@@ -178,5 +210,3 @@ npm test
 Tests compile TypeScript and cover API access gates, MCP tool discovery, request handling, upload validation and HTML conversion. No BookStack server is required.
 
 ---
-
-*Independent project inspired by [yellowgg2/mcp-bookstack](https://github.com/yellowgg2/mcp-bookstack); the original repository is unchanged.*
