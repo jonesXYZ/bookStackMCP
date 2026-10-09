@@ -32,7 +32,7 @@ Actions use BookStack's API request and query parameters. `body` is passed as th
 
 The `search_pages` tool remains available as a convenience: it searches pages and returns Markdown or converted plain-text content with source links.
 
-## Requirements and setup
+## Requirements and local setup
 
 - Node.js 20 or newer
 - BookStack with API access enabled
@@ -64,14 +64,46 @@ npm start
 
 The server uses stdio for MCP messages and writes diagnostics to stderr.
 
-## MCP client configuration
+## Docker image
+
+When tests pass, pushes to `master` publish `ghcr.io/jonesxyz/jnsbookmcp:master` and `ghcr.io/jonesxyz/jnsbookmcp:latest`. Pushes to this repository's current default branch, `main`, also publish `main` and `latest` tags; version tags (`v*`) publish a matching image tag. Pull requests run the same build and test checks without publishing an image.
+
+The image is private along with this repository. Sign in to GHCR with an account that can read the package, then pull the image:
+
+```powershell
+docker login ghcr.io -u jonesXYZ
+docker pull ghcr.io/jonesxyz/jnsbookmcp:latest
+```
+
+For automated deployments, use a GitHub token with `read:packages` permission. Do not add the token, BookStack API credentials, or a real `.env` file to the repository.
+
+Configure an MCP client to start the image over stdio. Docker's `-i` flag is required; bind the BookStack API URL and credentials into the container using your MCP client's environment-variable/secret mechanism:
 
 ```json
 {
   "mcpServers": {
     "jnsBookMCP": {
-      "command": "node",
-      "args": ["C:\\path\\to\\jnsBookMCP\\build\\app.js"],
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "BOOKSTACK_API_URL",
+        "-e",
+        "BOOKSTACK_API_TOKEN",
+        "-e",
+        "BOOKSTACK_API_KEY",
+        "-e",
+        "BOOKSTACK_ENABLE_WRITE",
+        "-e",
+        "BOOKSTACK_ENABLE_DELETE",
+        "-e",
+        "BOOKSTACK_ENABLE_ADMIN",
+        "-e",
+        "BOOKSTACK_ENABLE_IMPORTS",
+        "ghcr.io/jonesxyz/jnsbookmcp:latest"
+      ],
       "env": {
         "BOOKSTACK_API_URL": "https://bookstack.example.com",
         "BOOKSTACK_API_TOKEN": "your_token_id",
@@ -86,7 +118,21 @@ The server uses stdio for MCP messages and writes diagnostics to stderr.
 }
 ```
 
-For example, to enable ordinary creates and updates while keeping deletes, administration, and imports off, set only `BOOKSTACK_ENABLE_WRITE` to `"true"`. Restart the MCP server after changing environment settings.
+Ensure the MCP client process has the listed environment variables set before starting. Replace the credential placeholders with local secrets and do not commit them. Every mutation remains off unless its corresponding environment flag is explicitly set to `"true"`. For example, set only `BOOKSTACK_ENABLE_WRITE=true` to allow ordinary creates and updates while leaving deletes, administration, and imports disabled.
+
+To run the image directly for a local smoke test, supply the configuration with `--env-file`:
+
+```powershell
+docker run --rm -i --env-file .env ghcr.io/jonesxyz/jnsbookmcp:latest
+```
+
+MCP clients should use `docker run -i --rm` as shown above so stdio remains connected.
+
+## CI and releases
+
+The GitHub Actions workflow at `.github/workflows/docker.yml` runs `npm ci` and `npm test` on pull requests and pushes to `main` and `master`. After the tests pass, pushes to either branch and version tags (`v*`) build and publish the container to GHCR. The workflow requires no manually configured package token: it uses the repository's `GITHUB_TOKEN` with `packages: write`.
+
+If GitHub repository settings restrict Actions permissions, allow GitHub Actions to create and write packages. The package inherits the repository's private visibility; grant users or deployment accounts `read:packages` access to pull it.
 
 ## Development
 
