@@ -1,109 +1,131 @@
-# jnsBookMCP
+# bookStackMCP
 
-A configurable [Model Context Protocol](https://modelcontextprotocol.io/) server for the BookStack REST API.
+[![CI and Docker release](https://github.com/jonesXYZ/bookStackMCP/actions/workflows/docker.yml/badge.svg?branch=main)](https://github.com/jonesXYZ/bookStackMCP/actions/workflows/docker.yml)
+![Private repository](https://img.shields.io/badge/repository-private-lightgrey)
+![Node.js 24](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)
+![Docker image](https://img.shields.io/badge/image-GHCR-2496ED?logo=docker&logoColor=white)
+![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 
-This is an independent project inspired by [yellowgg2/mcp-bookstack](https://github.com/yellowgg2/mcp-bookstack). It uses the BookStack API route catalogue and leaves the original repository untouched.
+A configurable [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server for the [BookStack REST API](https://www.bookstackapp.com/).
 
-## Safety defaults
+> **Safety first:** reading is enabled by default. Every write, delete, administrative and import action is opt-in and disabled unless explicitly enabled.
 
-Reading is available by default. **Every create, update, delete, administrative, and import action is disabled unless explicitly enabled** in the MCP process environment or `.env`. Enable only the capabilities you need, and use a BookStack API token with matching least-privilege permissions.
+## Contents
 
-| Setting | Default | Enables |
+- [Features](#features)
+- [Permissions and safety](#permissions-and-safety)
+- [BookStack API coverage](#bookstack-api-coverage)
+- [Run with Docker](#run-with-docker)
+- [Run from source](#run-from-source)
+- [MCP client configuration](#mcp-client-configuration)
+- [Configuration reference](#configuration-reference)
+- [CI and image releases](#ci-and-image-releases)
+- [Development](#development)
+
+## Features
+
+- Search BookStack pages and return readable content with source links.
+- Browse and manage BookStack REST API resources using resource-specific MCP tools.
+- Export pages, chapters and books as HTML, PDF, plain text, Markdown or ZIP.
+- Upload attachments and image-gallery content.
+- Control write, delete, administrator and import tools independently through environment variables.
+- Use stdio transport with Docker or Node.js.
+
+## Permissions and safety
+
+The server only advertises actions allowed by the following opt-in flags. Deleting content also requires explicit confirmation in the tool call. BookStack permissions remain authoritative: use a dedicated API token with only the permissions the MCP server needs.
+
+| Environment variable | Default | Unlocks |
 | --- | --- | --- |
-| `BOOKSTACK_ENABLE_WRITE` | `false` | Create, update, and restore operations |
-| `BOOKSTACK_ENABLE_DELETE` | `false` | Delete and permanent recycle-bin operations; also requires write enabled |
-| `BOOKSTACK_ENABLE_ADMIN` | `false` | User, role, content-permission, audit-log, and system operations; administrative mutations also require write enabled |
-| `BOOKSTACK_ENABLE_IMPORTS` | `false` | Import creation and execution; also requires write enabled |
+| `BOOKSTACK_ENABLE_WRITE` | `false` | Create, update and restore |
+| `BOOKSTACK_ENABLE_DELETE` | `false` | Delete and permanently destroy content; also requires write enabled |
+| `BOOKSTACK_ENABLE_ADMIN` | `false` | User, role, content-permission, audit-log and system APIs |
+| `BOOKSTACK_ENABLE_IMPORTS` | `false` | Create and run imports; also requires write enabled |
 
-The server only advertises actions enabled by these settings. Deletion tools additionally require `confirmation: "DELETE"`; permanently destroying an item from the recycle bin requires `confirmation: "PERMANENTLY_DELETE"`. These confirmations supplement—not replace—the environment gates and BookStack permissions.
+Delete calls require `confirmation: "DELETE"`. Permanently destroying a recycle-bin item requires `confirmation: "PERMANENTLY_DELETE"`. Administrative mutations require both write and admin enabled; administrative deletions require write, delete and admin enabled. Import actions require both write and imports enabled.
+
+Keep BookStack API credentials and GHCR read tokens in your local secret store or MCP client configuration. Never commit them or bake them into a Docker image.
 
 ## BookStack API coverage
 
-MCP tools are grouped by API resource. The supported routes follow the [BookStack API route catalogue](https://github.com/BookStackApp/BookStack/blob/development/routes/api.php) and cover:
+MCP tools follow the [BookStack API route catalogue](https://github.com/BookStackApp/BookStack/blob/development/routes/api.php). The 80 supported routes cover:
 
-- Search and API documentation
-- Pages, chapters, books, and shelves, including HTML, PDF, plain-text, Markdown, and ZIP exports
-- Attachments and image gallery
-- Comments, tags, and recycle-bin restore/deletion
-- Users, roles, content permissions, audit log, and system information (administrative access)
-- Import jobs (separately gated)
+- Search and API documentation.
+- Pages, chapters, books and shelves, including exports.
+- Attachments and image gallery.
+- Comments, tags and recycle-bin restore/deletion.
+- Users, roles, content permissions, audit log and system information.
+- Import jobs.
 
-Actions use BookStack's API request and query parameters. `body` is passed as the JSON request body except for file uploads, which use multipart form data. For attachment uploads, supply `body.file` as `{ "name": "notes.pdf", "content_base64": "..." }`; for image-gallery uploads, supply `body.image` in the same shape along with the other API fields. File uploads are limited to 10 MiB. Responses larger than 5 MiB are rejected. BookStack itself remains the authority for endpoint availability, validation, and the configured user's permissions.
+Actions accept BookStack's API query parameters and request-body fields. For attachment uploads, use `body.file` with `{ "name": "notes.pdf", "content_base64": "..." }`. For gallery image uploads, use `body.image` in the same shape. File uploads are limited to 10 MiB; API responses are limited to 5 MiB. The `search_pages` convenience tool returns Markdown where available, otherwise plain text converted from HTML.
 
-The `search_pages` tool remains available as a convenience: it searches pages and returns Markdown or converted plain-text content with source links.
+## Run with Docker
 
-## Requirements and local setup
+The image is published to GitHub Container Registry (GHCR):
 
-- Node.js 20 or newer
-- BookStack with API access enabled
-- A BookStack API token ID and secret
+```powershell
+docker login ghcr.io -u jonesXYZ
+docker pull ghcr.io/jonesxyz/bookstackmcp:latest
+```
+
+The GHCR package is private. Sign in with an account granted package read access; automation can use a GitHub token with `read:packages`.
+
+Create a local `.env` from the example and add your BookStack URL and token:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Run the MCP server over stdio:
+
+```powershell
+docker run --rm -i --env-file .env ghcr.io/jonesxyz/bookstackmcp:latest
+```
+
+The `-i` flag keeps the MCP stdio connection open. The `.env` file stays on your machine and is not included in the image.
+
+## Run from source
+
+Requirements: Node.js 20 or newer and a BookStack API token.
 
 ```powershell
 npm ci
 Copy-Item .env.example .env
-```
-
-Configure the following variables in `.env`:
-
-| Variable | Required | Description |
-| --- | --- | --- |
-| `BOOKSTACK_API_URL` | Yes | BookStack base URL, with or without a trailing `/api` |
-| `BOOKSTACK_API_TOKEN` | Yes | BookStack API token ID |
-| `BOOKSTACK_API_KEY` | Yes | BookStack API token secret |
-| `BOOKSTACK_ENABLE_WRITE` | No | Explicitly enable create/update/restore; default `false` |
-| `BOOKSTACK_ENABLE_DELETE` | No | Explicitly enable deletes; requires write enabled |
-| `BOOKSTACK_ENABLE_ADMIN` | No | Explicitly enable administrative APIs; default `false` |
-| `BOOKSTACK_ENABLE_IMPORTS` | No | Explicitly enable import actions; requires write enabled |
-
-Then build, test, and run:
-
-```powershell
+# Edit .env with your BookStack URL and token.
 npm test
 npm start
 ```
 
-The server uses stdio for MCP messages and writes diagnostics to stderr.
+## MCP client configuration
 
-## Docker image
-
-When tests pass, pushes to `master` publish `ghcr.io/jonesxyz/jnsbookmcp:master` and `ghcr.io/jonesxyz/jnsbookmcp:latest`. Pushes to this repository's current default branch, `main`, also publish `main` and `latest` tags; version tags (`v*`) publish a matching image tag. Pull requests run the same build and test checks without publishing an image.
-
-The image is private along with this repository. Sign in to GHCR with an account that can read the package, then pull the image:
-
-```powershell
-docker login ghcr.io -u jonesXYZ
-docker pull ghcr.io/jonesxyz/jnsbookmcp:latest
-```
-
-For automated deployments, use a GitHub token with `read:packages` permission. Do not add the token, BookStack API credentials, or a real `.env` file to the repository.
-
-Configure an MCP client to start the image over stdio. Docker's `-i` flag is required; bind the BookStack API URL and credentials into the container using your MCP client's environment-variable/secret mechanism:
+For a Docker-based MCP client, pass the environment variables to the container:
 
 ```json
 {
   "mcpServers": {
-    "jnsBookMCP": {
+    "bookStackMCP": {
       "command": "docker",
       "args": [
         "run",
         "-i",
         "--rm",
-        "-e",
-        "BOOKSTACK_API_URL",
-        "-e",
-        "BOOKSTACK_API_TOKEN",
-        "-e",
-        "BOOKSTACK_API_KEY",
-        "-e",
-        "BOOKSTACK_ENABLE_WRITE",
-        "-e",
-        "BOOKSTACK_ENABLE_DELETE",
-        "-e",
-        "BOOKSTACK_ENABLE_ADMIN",
-        "-e",
-        "BOOKSTACK_ENABLE_IMPORTS",
-        "ghcr.io/jonesxyz/jnsbookmcp:latest"
-      ],
+        "--env-file",
+        "C:\\path\\to\\bookStackMCP\\.env",
+        "ghcr.io/jonesxyz/bookstackmcp:latest"
+      ]
+    }
+  }
+}
+```
+
+Alternatively, run the built server directly:
+
+```json
+{
+  "mcpServers": {
+    "bookStackMCP": {
+      "command": "node",
+      "args": ["C:\\path\\to\\bookStackMCP\\build\\app.js"],
       "env": {
         "BOOKSTACK_API_URL": "https://bookstack.example.com",
         "BOOKSTACK_API_TOKEN": "your_token_id",
@@ -118,21 +140,32 @@ Configure an MCP client to start the image over stdio. Docker's `-i` flag is req
 }
 ```
 
-Ensure the MCP client process has the listed environment variables set before starting. Replace the credential placeholders with local secrets and do not commit them. Every mutation remains off unless its corresponding environment flag is explicitly set to `"true"`. For example, set only `BOOKSTACK_ENABLE_WRITE=true` to allow ordinary creates and updates while leaving deletes, administration, and imports disabled.
+Only enable a capability when you specifically need it. For example, setting just `BOOKSTACK_ENABLE_WRITE` to `"true"` enables creates and updates while keeping deletes, administration and imports disabled.
 
-To run the image directly for a local smoke test, supply the configuration with `--env-file`:
+## Configuration reference
 
-```powershell
-docker run --rm -i --env-file .env ghcr.io/jonesxyz/jnsbookmcp:latest
-```
+| Variable | Required | Default | Description |
+| --- | :---: | :---: | --- |
+| `BOOKSTACK_API_URL` | Yes | — | BookStack base URL, with or without a trailing `/api`. |
+| `BOOKSTACK_API_TOKEN` | Yes | — | BookStack API token ID. |
+| `BOOKSTACK_API_KEY` | Yes | — | BookStack API token secret. |
+| `BOOKSTACK_ENABLE_WRITE` | No | `false` | Enable create, update and restore actions. |
+| `BOOKSTACK_ENABLE_DELETE` | No | `false` | Enable delete and permanent-destroy actions; requires write enabled. |
+| `BOOKSTACK_ENABLE_ADMIN` | No | `false` | Enable administrative APIs; mutations also require write enabled. |
+| `BOOKSTACK_ENABLE_IMPORTS` | No | `false` | Enable create/run import actions; requires write enabled. |
 
-MCP clients should use `docker run -i --rm` as shown above so stdio remains connected.
+## CI and image releases
 
-## CI and releases
+GitHub Actions runs `npm ci` and `npm test` for pull requests and pushes to `main` or `master`. After tests pass, the workflow builds and publishes the Docker image:
 
-The GitHub Actions workflow at `.github/workflows/docker.yml` runs `npm ci` and `npm test` on pull requests and pushes to `main` and `master`. After the tests pass, pushes to either branch and version tags (`v*`) build and publish the container to GHCR. The workflow requires no manually configured package token: it uses the repository's `GITHUB_TOKEN` with `packages: write`.
+| Event | Image tags |
+| --- | --- |
+| Push to `main` | `main`, `latest`, commit SHA |
+| Push to `master` | `master`, `latest`, commit SHA |
+| Version tag such as `v1.2.3` | Version tag, commit SHA |
+| Pull request | Tests only; no published image |
 
-If GitHub repository settings restrict Actions permissions, allow GitHub Actions to create and write packages. The package inherits the repository's private visibility; grant users or deployment accounts `read:packages` access to pull it.
+The workflow publishes `ghcr.io/jonesxyz/bookstackmcp` using the built-in `GITHUB_TOKEN` with `packages: write`; no manually configured publishing token is needed. The GHCR package is private; grant package read access to any user or deployment account that needs to pull the image.
 
 ## Development
 
@@ -140,4 +173,8 @@ If GitHub repository settings restrict Actions permissions, allow GitHub Actions
 npm test
 ```
 
-Tests compile the TypeScript and exercise access gates, API calls, upload validation, and HTML conversion. A BookStack instance is not required.
+Tests compile TypeScript and cover API access gates, MCP tool discovery, request handling, upload validation and HTML conversion. No BookStack server is required.
+
+---
+
+*Independent project inspired by [yellowgg2/mcp-bookstack](https://github.com/yellowgg2/mcp-bookstack); the original repository is unchanged.*

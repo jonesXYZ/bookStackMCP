@@ -85,7 +85,7 @@ function createBookStackClient(): { client: BookStackClient; access: BookStackAc
 class JnsBookMcpServer {
   private readonly server = new Server(
     {
-      name: "jns-book-mcp",
+      name: "bookstack-mcp",
       version: "1.0.0"
     },
     {
@@ -317,7 +317,7 @@ class JnsBookMcpServer {
 
   async run(): Promise<void> {
     await this.server.connect(new StdioServerTransport());
-    console.error("jnsBookMCP is running on stdio.");
+    console.error("bookStackMCP is running on stdio.");
   }
 
   async close(): Promise<void> {

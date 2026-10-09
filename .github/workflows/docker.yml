@@ -56,7 +56,7 @@ jobs:
         id: metadata
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/jonesxyz/jnsbookmcp
+          images: ghcr.io/jonesxyz/bookstackmcp
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' }}
             type=ref,event=branch

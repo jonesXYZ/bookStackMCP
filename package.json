@@ -1,13 +1,13 @@
 {
-  "name": "jns-book-mcp",
+  "name": "bookstack-mcp",
   "version": "1.0.0",
-  "description": "Read-only Model Context Protocol server for searching BookStack pages.",
+  "description": "Configurable read-only-by-default Model Context Protocol server for the BookStack REST API.",
   "type": "module",
   "engines": {
     "node": ">=20"
   },
   "bin": {
-    "jns-book-mcp": "./build/app.js"
+    "bookstack-mcp": "./build/app.js"
   },
   "files": [
     "build"

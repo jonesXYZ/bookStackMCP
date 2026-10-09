@@ -20,7 +20,7 @@ async function listServerTools(access = {}) {
       BOOKSTACK_ENABLE_IMPORTS: String(access.imports ?? false)
     }
   });
-  const client = new Client({ name: "jnsBookMCP-test", version: "1.0.0" });
+  const client = new Client({ name: "bookStackMCP-test", version: "1.0.0" });
 
   try {
     await client.connect(transport);
