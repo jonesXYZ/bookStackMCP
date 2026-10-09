@@ -17,7 +17,7 @@
     "start": "node build/app.js",
     "test": "npm run build && node --test"
   },
-  "license": "MIT",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "keywords": [
     "mcp",
     "model-context-protocol",

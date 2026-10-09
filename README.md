@@ -4,7 +4,7 @@
 ![Private repository](https://img.shields.io/badge/repository-private-lightgrey)
 ![Node.js 24](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)
 ![Docker image](https://img.shields.io/badge/image-GHCR-2496ED?logo=docker&logoColor=white)
-![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
+[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/license-PolyForm--Noncommercial--1.0.0-blue.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0/)
 
 A configurable [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server for the [BookStack REST API](https://www.bookstackapp.com/).
 
