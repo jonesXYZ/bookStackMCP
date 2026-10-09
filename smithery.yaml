@@ -1,0 +1,57 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required:
+      - BOOKSTACK_API_URL
+      - BOOKSTACK_API_TOKEN
+      - BOOKSTACK_API_KEY
+    properties:
+      BOOKSTACK_API_URL:
+        type: string
+        description: BookStack base URL, with or without a trailing /api.
+      BOOKSTACK_API_TOKEN:
+        type: string
+        description: BookStack API token ID. Use a least-privilege account.
+      BOOKSTACK_API_KEY:
+        type: string
+        description: BookStack API token secret.
+      BOOKSTACK_ENABLE_WRITE:
+        type: boolean
+        default: false
+        description: Enable create and update operations.
+      BOOKSTACK_ENABLE_DELETE:
+        type: boolean
+        default: false
+        description: Enable delete and permanent recycle-bin operations (also requires writes enabled).
+      BOOKSTACK_ENABLE_ADMIN:
+        type: boolean
+        default: false
+        description: Enable user, role, permission, audit-log, and system operations.
+      BOOKSTACK_ENABLE_IMPORTS:
+        type: boolean
+        default: false
+        description: Enable import job creation and execution (also requires writes enabled).
+  commandFunction:
+    |-
+    (config) => ({
+      command: 'node',
+      args: ['build/app.js'],
+      env: {
+        BOOKSTACK_API_URL: config.BOOKSTACK_API_URL,
+        BOOKSTACK_API_TOKEN: config.BOOKSTACK_API_TOKEN,
+        BOOKSTACK_API_KEY: config.BOOKSTACK_API_KEY,
+        BOOKSTACK_ENABLE_WRITE: String(config.BOOKSTACK_ENABLE_WRITE || false),
+        BOOKSTACK_ENABLE_DELETE: String(config.BOOKSTACK_ENABLE_DELETE || false),
+        BOOKSTACK_ENABLE_ADMIN: String(config.BOOKSTACK_ENABLE_ADMIN || false),
+        BOOKSTACK_ENABLE_IMPORTS: String(config.BOOKSTACK_ENABLE_IMPORTS || false)
+      }
+    })
+  exampleConfig:
+    BOOKSTACK_API_URL: https://bookstack.example.com
+    BOOKSTACK_API_TOKEN: your_read_only_token_id
+    BOOKSTACK_API_KEY: your_read_only_token_secret
+    BOOKSTACK_ENABLE_WRITE: false
+    BOOKSTACK_ENABLE_DELETE: false
+    BOOKSTACK_ENABLE_ADMIN: false
+    BOOKSTACK_ENABLE_IMPORTS: false

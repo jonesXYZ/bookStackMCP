@@ -1,0 +1,36 @@
+{
+  "name": "jns-book-mcp",
+  "version": "1.0.0",
+  "description": "Read-only Model Context Protocol server for searching BookStack pages.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "jns-book-mcp": "./build/app.js"
+  },
+  "files": [
+    "build"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/app.js",
+    "test": "npm run build && node --test"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "bookstack",
+    "read-only"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "dotenv": "^17.2.3",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "typescript": "^5.9.3"
+  }
+}
